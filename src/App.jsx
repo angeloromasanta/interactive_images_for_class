@@ -1,77 +1,65 @@
-// src/app.jsx
-import { useState } from 'react'
+import { useState } from 'react';
 
 function App() {
-  const [image, setImage] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [prompt, setPrompt] = useState('');
+  const [image, setImage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const generateImage = async () => {
-    setLoading(true)
-    setError(null)
-    
     try {
+      setLoading(true);
+      
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: "Design a minimalist, propaganda-style poster encouraging Earth's citizens to Join the Asteroid Mining Revolution"
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate image');
-      }
-
+          prompt: prompt
+        })
+      });
+  
       const result = await response.json();
-      
-      if (result.output && result.output[0]) {
+      if (result.output) {
         setImage(result.output[0]);
-      } else {
-        throw new Error('No image generated');
       }
-    } catch (err) {
-      console.error('Error:', err);
-      setError(err.message);
-    } finally {
+      setLoading(false);
+  
+    } catch (error) {
+      console.error('Error:', error);
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="App" style={{ padding: '20px' }}>
-      <button 
-        onClick={generateImage} 
-        disabled={loading}
-        style={{
-          padding: '10px 20px',
-          fontSize: '16px',
-          cursor: loading ? 'not-allowed' : 'pointer'
-        }}
-      >
-        {loading ? 'Generating...' : 'Generate Image'}
-      </button>
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+      <h1>Image Generator</h1>
+      <div style={{ marginBottom: '20px' }}>
+        <input
+          type="text"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Enter your prompt"
+          style={{ width: '100%', padding: '10px' }}
+        />
+        <button
+          onClick={generateImage}
+          disabled={loading || !prompt}
+          style={{ marginTop: '10px', padding: '10px 20px' }}
+        >
+          {loading ? 'Generating...' : 'Generate Image'}
+        </button>
+      </div>
       
-      {error && (
-        <div style={{ color: 'red', marginTop: '10px' }}>
-          Error: {error}
-        </div>
-      )}
+      {loading && <p>Generating image...</p>}
       
       {image && (
-        <div style={{ marginTop: '20px' }}>
-          <img 
-            src={image} 
-            alt="Generated image" 
-            style={{ maxWidth: '100%', borderRadius: '8px' }} 
-          />
+        <div>
+          <img src={image} alt="Generated" style={{ maxWidth: '100%' }} />
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
