@@ -1,3 +1,4 @@
+// src/app.jsx
 import { useState } from 'react'
 
 function App() {
@@ -10,7 +11,6 @@ function App() {
     setError(null)
     
     try {
-      // First, create the prediction
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
@@ -22,39 +22,22 @@ function App() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to generate image');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate image');
       }
 
-      const prediction = await response.json()
-      console.log('Prediction:', prediction);
+      const result = await response.json();
       
-      // Poll for the result
-      const intervalId = setInterval(async () => {
-        const response = await fetch(
-          `https://api.replicate.com/v1/predictions/${prediction.id}`,
-          {
-            headers: {
-              Authorization: `Token ${import.meta.env.VITE_REPLICATE_API_TOKEN}`,
-            },
-          }
-        )
-        const result = await response.json()
-        console.log('Result:', result);
-
-        if (result.status === 'succeeded') {
-          setImage(result.output[0])
-          setLoading(false)
-          clearInterval(intervalId)
-        } else if (result.status === 'failed') {
-          setError('Image generation failed')
-          setLoading(false)
-          clearInterval(intervalId)
-        }
-      }, 1000)
+      if (result.output && result.output[0]) {
+        setImage(result.output[0]);
+      } else {
+        throw new Error('No image generated');
+      }
     } catch (err) {
       console.error('Error:', err);
-      setError(err.message)
-      setLoading(false)
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   }
 
